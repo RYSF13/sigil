@@ -1,0 +1,20 @@
+# .gitignore for Sigil
+
+# encrypted / decrypted file for testing
+*.asc
+*.txt
+
+# keys
+*.pub
+*.sec
+*.key
+
+# temp
+test
+test.*
+*.test
+*.tmp
+
+# binary files
+*.o
+sigil
