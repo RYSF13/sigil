@@ -4,6 +4,7 @@ LDFLAGS = -lsodium -s
 
 SRC = $(wildcard src/*.c)
 OBJ = $(SRC:.c=.o)
+BIN = sigil
 
 PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
@@ -20,10 +21,11 @@ all: build install clean
 
 install: $(OBJ)
 	mkdir -p $(BINDIR)
-	cp sigil $(BINDIR)/$(BIN)
+	cp sigil $(BINDIR)/
 	chmod 755 $(BINDIR)/$(BIN)
 
 uninstall:
 	rm -f $(BINDIR)/$(BIN)
 
 purge: clean uninstall
+

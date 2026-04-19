@@ -6,9 +6,11 @@
 #include <stdint.h>
 
 void armor_print_pub(const SigilPubKey *pub);
+void armor_print_sec(const SigilSecKey *sec);
 
 /* MESSAGE / SIGNATURE armor */
 void armor_wrap(const char *type, const uint8_t *data, size_t len);
 int  armor_unwrap(const char *type, const char *text, uint8_t **out, size_t *len);
+int  armor_parse(uint8_t **data, size_t *len);
 
 #endif

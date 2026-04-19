@@ -185,7 +185,9 @@ static int cmd_show(const char *fp)
 static int cmd_delete(const char *fp)
 {
     printf("Delete key %s? [y/N] ", fp);
-    int c = getchar();
+
+    char c;
+    scanf("%c", &c);
     if (c != 'y' && c != 'Y') {
         printf("Aborted.\n");
         return 0;
@@ -204,6 +206,12 @@ static int cmd_import(const char *file)
     if (read_file(file, &data, &len) != 0) {
         fprintf(stderr, "sigil: cannot read file\n");
         return 1;
+    }
+
+    if (!(len >= 8 &&
+          (memcmp(data, SIGIL_PUB_MAGIC, 8) == 0 ||
+           memcmp(data, SIGIL_PRI_MAGIC, 8) == 0))) {
+        armor_parse(&data, &len);
     }
 
     if (len >= 8 && memcmp(data, SIGIL_PUB_MAGIC, 8) == 0) {
@@ -237,7 +245,7 @@ static int cmd_export_pub(const char *fp)
 {
     SigilPubKey pub;
     if (keyring_find_pub(&pub, fp) != 0) {
-        fprintf(stderr, "sigil: key not found or ambiguous\n");
+        fprintf(stderr, "sigil: public key not found or ambiguous\n");
         return 1;
     }
     armor_print_pub(&pub);
@@ -252,12 +260,7 @@ static int cmd_export_sec(const char *fp)
         fprintf(stderr, "sigil: private key not found or ambiguous\n");
         return 1;
     }
-
-    uint8_t *bin; size_t len;
-    if (key_sec_serialize(&sec, &bin, &len) != 0) { key_free_sec(&sec); return 1; }
-
-    fwrite(bin, 1, len, stdout);
-    free(bin);
+    armor_print_sec(&sec);
     key_free_sec(&sec);
     return 0;
 }
