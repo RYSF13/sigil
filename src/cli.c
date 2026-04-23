@@ -57,20 +57,39 @@ static int has_flag(int argc, char **argv, const char *flag)
     return 0;
 }
 
+
 static int read_pass(char *out, size_t n, const char *prompt)
 {
     struct termios oldt, newt;
-    fprintf(stderr, "%s", prompt);
-    if (tcgetattr(STDIN_FILENO, &oldt) != 0) return -1;
+    FILE *tty = fopen("/dev/tty", "r+");
+    
+    if (!tty) {
+        fprintf(stderr, "sigil: cannot open /dev/tty for passphrase prompt\n");
+        return -1;
+    }
+
+    fprintf(tty, "%s", prompt);
+    fflush(tty);
+
+    int fd = fileno(tty);
+    if (tcgetattr(fd, &oldt) != 0) {
+        fclose(tty);
+        return -1;
+    }
+    
     newt = oldt;
     newt.c_lflag &= ~ECHO;
-    if (tcsetattr(STDIN_FILENO, TCSANOW, &newt) != 0) return -1;
+    if (tcsetattr(fd, TCSANOW, &newt) != 0) {
+        fclose(tty);
+        return -1;
+    }
 
-    if (!fgets(out, (int)n, stdin)) out[0] = 0;
+    if (!fgets(out, (int)n, tty)) out[0] = 0;
     out[strcspn(out, "\r\n")] = 0;
 
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    fprintf(stderr, "\n");
+    tcsetattr(fd, TCSANOW, &oldt);
+    fprintf(tty, "\n");
+    fclose(tty);
     return 0;
 }
 
@@ -185,10 +204,19 @@ static int cmd_show(const char *fp)
 static int cmd_delete(const char *fp)
 {
     printf("Delete key %s? [y/N] ", fp);
+    fflush(stdout); 
 
-    char c;
-    scanf("%c", &c);
-    if (c != 'y' && c != 'Y') {
+    char buf[16];
+
+    FILE *tty = fopen("/dev/tty", "r");
+    FILE *in = tty ? tty : stdin;
+
+    if (!fgets(buf, sizeof(buf), in)) {
+        buf[0] = 0;
+    }
+    if (tty) fclose(tty);
+
+    if (buf[0] != 'y' && buf[0] != 'Y') {
         printf("Aborted.\n");
         return 0;
     }
